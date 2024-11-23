@@ -1,0 +1,11 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+add_newline = false
+
+[container]
+disabled = true
+
+[dotnet]
+symbol = '.NET'
+version_format = '${raw}'
+format = 'via [$symbol($version) ]($style)'
