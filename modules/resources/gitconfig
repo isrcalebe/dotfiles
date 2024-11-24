@@ -46,8 +46,8 @@
   smudge = unexpand --tabs=2 --first-only
   clean = expand --tabs=2 --initial
 [user]
-  name = Israel Calebe
+  name = isrcalebe
   email = work@isrcalebe.cc
-  signingkey = E417A9AC8F8CC83F
+  signingKey = E417A9AC8F8CC83F
 [credential "helperselector"]
 	selected = manager

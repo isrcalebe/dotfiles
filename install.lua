@@ -26,6 +26,8 @@ local UPDATER_REPOSITORY = 'isrcalebe/dotfiles'
 local UPDATER_BRANCH = 'main'
 local UPDATER_PATH = '/tmp/dotfiles'
 
+local MODULE_LIST = { 'zsh', 'resources' }
+
 local cmd_clone = 'git clone https://github.com/' .. UPDATER_REPOSITORY .. ' --branch ' .. UPDATER_BRANCH .. ' --single-branch ' .. UPDATER_PATH
 local cmd_clone_handle = io.popen(cmd_clone .. ' 2>&1')
 
@@ -44,3 +46,78 @@ if not cmd_clone_success then
 end
 
 print('Cloned the updater repository successfully!')
+
+local install_module = function (module_name, local_dir)
+  local install_script_path
+  if local_dir then
+    install_script_path = './modules/' .. module_name .. '/_INSTALL.lua'
+  else
+    install_script_path = UPDATER_PATH .. '/modules/' .. module_name .. '/_INSTALL.lua'
+  end
+
+  local chunk, err = loadfile(install_script_path)
+  if err or not chunk then
+    print('Failed to load the install script for module ' .. module_name .. '!')
+    print(err)
+    os.exit(1)
+  end
+
+  local PRE_INSTALL, INSTALL, POST_INSTALL = chunk()
+
+  if not PRE_INSTALL or not INSTALL or not POST_INSTALL then
+    print('The install script for module ' .. module_name .. ' is invalid!')
+    os.exit(1)
+  end
+
+  local log_fn = function (...)
+    io.stdout:write('  ' .. module_name .. ': ' .. table.concat({...}, ' ') .. '\n')
+  end
+
+  local utils = {
+    is_command_available = is_command_available,
+    exists = function (path)
+      local file = io.open(path, 'r')
+
+      if not file then
+        return false
+      end
+
+      file:close()
+
+      return true
+    end,
+    module_dir = local_dir and './modules/' .. module_name or UPDATER_PATH .. '/modules/' .. module_name,
+  }
+
+  print()
+  print('Running pre-install for module "' .. module_name .. '" ...')
+  local pre_install_status = PRE_INSTALL(log_fn, utils)
+
+  if not pre_install_status then
+    print('Pre-install for module "' .. module_name .. '" failed!')
+    os.exit(1)
+  end
+
+  print('Running install for module "' .. module_name .. '" ...')
+  local install_status = INSTALL(log_fn, utils)
+
+  if not install_status then
+    print('Install for module "' .. module_name .. '" failed!')
+    os.exit(1)
+  end
+
+  print('Running post-install for module "' .. module_name .. '" ...')
+  local post_install_status = POST_INSTALL(log_fn, utils)
+
+  if not post_install_status then
+    print('Post-install for module "' .. module_name .. '" failed!')
+    os.exit(1)
+  end
+  print()
+end
+
+for _, module_name in ipairs(MODULE_LIST) do
+  install_module(module_name, false)
+end
+
+print('Finished installing modules!')
