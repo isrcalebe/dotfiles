@@ -9,3 +9,7 @@ insert_final_newline = true
 [*.{sh,zsh}]
 indent_style = space
 indent_size = 2
+
+[*.{lua}]
+indent_style = space
+indent_size = 2
