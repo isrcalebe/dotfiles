@@ -120,7 +120,12 @@ _G._VENDOR = {
 }
 
 for _, vendor in ipairs(_VENDOR) do
-  package.path = package.path .. ';' .. 'vendor/' .. vendor .. '/?.lua'
+  package.path = package.path
+    .. ';'
+    .. _U.cloned_path
+    .. '/vendor/'
+    .. vendor
+    .. '/?.lua'
 end
 
 require('lunarkit')
