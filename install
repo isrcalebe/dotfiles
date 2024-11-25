@@ -61,7 +61,7 @@ end
 
 _U = {
   repository = 'isrcalebe/dotfiles',
-  branch = 'manager',
+  branch = 'main',
   path = '/tmp/dotfiles',
 }
 
@@ -156,11 +156,10 @@ build_system:on('makepkg', function()
       makepkg = lk_obj_create(),
     }
 
-    -- local pkg_path = _U.cloned_path .. '/modules/' .. pkg .. '/MAKEPKG'
-    local pkg_path = './modules/' .. pkg .. '/MAKEPKG'
+    local pkg_path = _U.cloned_path .. '/modules/' .. pkg .. '/MAKEPKG'
     local pkg_chunk, pkg_chunk_error = loadfile(pkg_path, 't', pkg_env)
 
-    local modules_path = './modules'
+    local modules_path = _U.cloned_path .. '/modules'
 
     if not pkg_chunk then
       df_log('error', 'There was an error loading the MAKEPKG file.')
