@@ -1,0 +1,20 @@
+#!/usr/bin/env lua
+
+if _VERSION < 'Lua 5.4' then
+  print('You need Lua 5.4 or later to run this script.')
+  os.exit(1)
+end
+
+--#region Dependencies
+
+_G._VENDOR = {
+  'lunarkit',
+}
+
+for _, vendor in ipairs(_VENDOR) do
+  package.path = package.path .. ';' .. 'vendor/' .. vendor .. '/?.lua'
+end
+
+require('lunarkit')
+
+--#endregion
