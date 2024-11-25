@@ -74,7 +74,7 @@ _U.get_gc_expr = function()
   _U.cloned_path = _U.path .. '-' .. df_get_timestamp()
 
   return string.format(
-    'bash -c "git clone https://github.com/%s --recurse-submodules -j8 --branch %s %s"',
+    'bash -c "git clone --recurse-submodules https://github.com/%s --branch %s %s"',
     _U.repository,
     _U.branch,
     _U.cloned_path
