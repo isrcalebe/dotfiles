@@ -5,6 +5,114 @@ if _VERSION < 'Lua 5.4' then
   os.exit(1)
 end
 
+--#region Utilities
+
+---Checks if a command is available.
+---
+---@param command string The command to check.
+---@return boolean status `true` if the command is available, `false` otherwise.
+df_is_command = function(command)
+  local handle = io.popen('which ' .. command .. ' > /dev/null 2>&1; echo $?')
+
+  if not handle then return false end
+
+  local result = handle:read('*a')
+
+  handle:close()
+
+  return tonumber(result) == 0
+end
+
+---Gets the current timestamp.
+---
+---@return string | osdate The current timestamp.
+df_get_timestamp = function()
+  return os.date('%Y%m%d%H%M%S')
+end
+
+---Logs a message.
+---
+---@param level 'info' | 'warn' | 'error' The log level.
+---@param ... any
+df_log = function(level, ...)
+  local message = table.concat({ ... }, '')
+  local timestamp = os.date('%H:%M:%S')
+
+  local level_color = {
+    info = '\27[32m',
+    warn = '\27[33m',
+    error = '\27[31m',
+  }
+
+  io.stdout:write(
+    string.format(
+      '\27[90m[%s] %s[%s] \27[37m%s\27[0m\n',
+      timestamp,
+      level_color[level] or '\27[97m',
+      level:upper(),
+      message
+    )
+  )
+end
+
+--#endregion
+
+--#region Bootstrapping
+
+_U = {
+  repository = 'isrcalebe/dotfiles',
+  branch = 'manager',
+  path = '/tmp/dotfiles',
+}
+
+_U.cloned_path = nil
+
+---Gets the `git-clone` command expression.
+---
+---@return string expression The `git-clone` command expression.
+_U.get_gc_expr = function()
+  _U.cloned_path = _U.path .. '-' .. df_get_timestamp()
+
+  return string.format(
+    'bash -c "git clone https://github.com/%s --branch %s %s"',
+    _U.repository,
+    _U.branch,
+    _U.cloned_path
+  )
+end
+
+_M = { 'gitconfig' }
+
+if not df_is_command('git') then
+  df_log('error', '`git` is not available.')
+  os.exit(1)
+end
+
+df_log('info', 'The repository is being cloned... (', _U.repository, ')')
+
+local gc_handle = io.popen(_U.get_gc_expr() .. ' 2>&1')
+
+if not gc_handle then
+  df_log('error', 'There was an error cloning the repository.')
+  os.exit(1)
+end
+
+local gc_result = gc_handle:read('*a')
+local gc_status = gc_handle:close()
+
+if not gc_status then
+  df_log('error', 'There was an error cloning the repository.')
+  df_log('error', 'Error Output:')
+
+  print(gc_result)
+
+  os.exit(1)
+end
+
+df_log('info', 'The repository was cloned successfully. (', _U.cloned_path, ')')
+
+--#endregion
+
 --#region Dependencies
 
 _G._VENDOR = {

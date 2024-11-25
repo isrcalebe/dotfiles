@@ -12,5 +12,10 @@
   },
   "workspace.library": [
     "./vendor/lunarkit"
-  ]
+  ],
+    "diagnostics.globals": [
+        "df_is_command",
+        "df_get_timestamp",
+        "df_log"
+    ]
 }
