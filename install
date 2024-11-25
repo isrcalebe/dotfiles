@@ -126,3 +126,12 @@ end
 require('lunarkit')
 
 --#endregion
+
+lk_ansi_setup()
+print()
+print(
+  lk_ansi(
+    '${fg_black bg_white bold} If you see this message, the script is working. ${reset}'
+  )
+)
+print()
