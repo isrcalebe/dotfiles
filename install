@@ -81,8 +81,6 @@ _U.get_gc_expr = function()
   )
 end
 
-_M = { 'gitconfig' }
-
 if not df_is_command('git') then
   df_log('error', '`git` is not available.')
   os.exit(1)
@@ -120,12 +118,15 @@ _G._VENDOR = {
 }
 
 for _, vendor in ipairs(_VENDOR) do
+  -- Remote dependencies
   package.path = package.path
     .. ';'
     .. _U.cloned_path
     .. '/vendor/'
     .. vendor
     .. '/?.lua'
+
+  package.path = package.path .. ';' .. './vendor/' .. vendor .. '/?.lua'
 end
 
 require('lunarkit')
@@ -136,7 +137,132 @@ lk_ansi_setup()
 print()
 print(
   lk_ansi(
-    '${fg_black bg_white bold} If you see this message, the script is working. ${reset}'
+    '${fg_#00DB2F bg_#004B10 bold} If you see this message, the script is working. ${reset}'
   )
 )
-print()
+
+_M = { 'zsh', 'gitconfig', 'gnupg' }
+
+local build_system = lk_obj_create()
+
+build_system:on('makepkg', function()
+  for _, pkg in ipairs(_M) do
+    local pkg_env = {
+      df_pkg_name = pkg,
+      df_log = df_log,
+      lk_dump = lk_dump,
+      lk_dump_print = lk_dump_print,
+      lk_ansi = lk_ansi,
+      makepkg = lk_obj_create(),
+    }
+
+    -- local pkg_path = _U.cloned_path .. '/modules/' .. pkg .. '/MAKEPKG'
+    local pkg_path = './modules/' .. pkg .. '/MAKEPKG'
+    local pkg_chunk, pkg_chunk_error = loadfile(pkg_path, 't', pkg_env)
+
+    local modules_path = './modules'
+
+    if not pkg_chunk then
+      df_log('error', 'There was an error loading the MAKEPKG file.')
+      df_log('error', 'Error:', pkg_chunk_error)
+
+      os.exit(1)
+    end
+
+    local pkg_ctx = {}
+    local pkg_ctx_config = {}
+    local pkg_ctx_env = {}
+
+    local makepkg_state = ''
+
+    pkg_ctx.log = function(self, level, ...)
+      df_log(
+        level,
+        lk_ansi(
+          '${fg_cyan bold}'
+            .. pkg
+            .. '${bold_off}#${italic}'
+            .. makepkg_state
+            .. '${reset} '
+        ),
+        table.concat({ ... }, '')
+      )
+    end
+
+    pkg_ctx.set_config = function(self, key, value)
+      pkg_ctx_config[key] = value
+
+      self:log('info', 'Setting config variable: ', key, ' -> ', value)
+
+      return value
+    end
+
+    pkg_ctx.get_config = function(self, key)
+      return pkg_ctx_config[key]
+    end
+
+    pkg_ctx.make_backup = function(self, path)
+      local backup_path = path .. '.' .. df_get_timestamp()
+
+      if not io.open(path, 'r') then return end
+
+      os.execute('mv ' .. path .. ' ' .. backup_path)
+
+      self:log('info', 'Backup created for path: ', path, ' -> ', backup_path)
+    end
+
+    pkg_ctx.install = function(self, source, target)
+      os.execute('cp ' .. source .. ' ' .. target .. ' -r')
+
+      self:log('info', 'Path moved: ', source, ' -> ', target)
+    end
+
+    pkg_ctx.path_join = function(self, ...)
+      return table.concat({ ... }, '/')
+    end
+
+    pkg_ctx.env = function(self, key)
+      if pkg_ctx_env[key] then return pkg_ctx_env[key] end
+
+      return os.getenv(key)
+    end
+
+    pkg_ctx.shell = function(self, command, options)
+      local handle = io.popen(command)
+
+      if not handle then
+        if options.on_failure then
+          options.on_failure('Could not open handle.')
+        end
+
+        return
+      end
+
+      local result = handle:read('*a')
+      local status = handle:close()
+
+      if status then
+        if options.on_success then options.on_success(result) end
+      else
+        if options.on_failure then options.on_failure(result) end
+      end
+    end
+
+    pkg_ctx_env.PKG_DIR = modules_path .. '/' .. pkg
+
+    pkg_chunk()
+
+    print()
+
+    makepkg_state = 'pre_install'
+    pkg_env.makepkg:emit('pre_install', pkg_ctx)
+
+    makepkg_state = 'install'
+    pkg_env.makepkg:emit('install', pkg_ctx)
+
+    makepkg_state = 'post_install'
+    pkg_env.makepkg:emit('post_install', pkg_ctx)
+  end
+end)
+
+build_system:emit('makepkg')

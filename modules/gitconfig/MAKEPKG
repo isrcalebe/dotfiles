@@ -1,0 +1,16 @@
+makepkg:on('pre_install', function(ctx)
+  local gitconfig_path =
+    ctx:set_config('GC_PATH', ctx:path_join(ctx:env('HOME'), '.gitconfig'))
+
+  ctx:make_backup(gitconfig_path)
+end)
+
+makepkg:on('install', function(ctx)
+  local gitconfig_path = ctx:get_config('GC_PATH')
+
+  ctx:install(ctx:path_join(ctx:env('PKG_DIR'), 'gitconfig'), gitconfig_path)
+end)
+
+makepkg:on('post_install', function(ctx)
+  ctx:log('info', 'Done.')
+end)

@@ -1,0 +1,36 @@
+makepkg:on('pre_install', function(ctx)
+  local gpg_agent_conf_path = ctx:set_config(
+    'GPG_AGENT_CONF_PATH',
+    ctx:path_join(ctx:env('HOME'), '.gnupg', 'gpg-agent.conf')
+  )
+  local gpg_conf_path = ctx:set_config(
+    'GPG_CONF_PATH',
+    ctx:path_join(ctx:env('HOME'), '.gnupg', 'gpg.conf')
+  )
+
+  ctx:make_backup(gpg_agent_conf_path)
+  ctx:make_backup(gpg_conf_path)
+end)
+
+makepkg:on('install', function(ctx)
+  local gpg_agent_conf_path = ctx:get_config('GPG_AGENT_CONF_PATH')
+  local gpg_conf_path = ctx:get_config('GPG_CONF_PATH')
+
+  ctx:install(
+    ctx:path_join(ctx:env('PKG_DIR'), 'gpg-agent.conf'),
+    gpg_agent_conf_path
+  )
+  ctx:install(ctx:path_join(ctx:env('PKG_DIR'), 'gpg.conf'), gpg_conf_path)
+end)
+
+makepkg:on('post_install', function(ctx)
+  ctx:log('info', 'Reloading GPG agent...')
+  ctx:shell('gpgconf --kill gpg-agent', {
+    on_success = function()
+      ctx:log('info', 'Done.')
+    end,
+    on_failure = function(message)
+      ctx:log('error', 'Failed to reload GPG agent: ', message)
+    end,
+  })
+end)
