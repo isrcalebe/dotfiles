@@ -6,6 +6,10 @@ end_of_line = lf
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[*.{ps1,psm1}]
+[*.{ps1,psm1,sh,bash,zsh}]
+indent_style = space
+indent_size = 2
+
+[install]
 indent_style = space
 indent_size = 2
