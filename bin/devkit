@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+source "$DEVKIT_PATH/ascii.sh"
+echo "" # Add spacing
+echo "                                 $(cat $DEVKIT_PATH/version)"
+echo "" # Add spacing
+source $DEVKIT_PATH/bin/omakub-sub/menu.sh

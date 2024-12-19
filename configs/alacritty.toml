@@ -1,0 +1,1 @@
+import = [ "~/.config/alacritty/theme.toml", "~/.config/alacritty/fonts/JetBrainsMono.toml", "~/.config/alacritty/font-size.toml", "~/.local/share/devkit/defaults/alacritty.toml" ]
